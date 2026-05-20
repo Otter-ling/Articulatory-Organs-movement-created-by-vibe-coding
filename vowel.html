@@ -25,6 +25,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             margin-top: 15px;
         }
+
         .controls { 
             margin-top: 25px; 
             max-width: 800px;
@@ -85,12 +86,16 @@
         }
         
         .icon-rect-gray { width: 25px; height: 12px; background-color: #b2bec3; }
+        .icon-velum { width: 25px; height: 12px; background-color: #7f8c8d; }
         .icon-square-pink { width: 16px; height: 16px; background-color: #ff7675; }
         .icon-circle-magenta { width: 12px; height: 12px; background-color: #e84393; border-radius: 50%; }
         .icon-ellipse-pink { width: 30px; height: 10px; background-color: #ffcccc; border-radius: 50%; border: 1px solid #eeaaaa; }
         .icon-vocal-cords { width: 20px; height: 15px; border-top: 3px dashed #d63031; border-bottom: 3px dashed #d63031; }
+        
+        /* 凡例用：図形インジケーターのスタイル記述 */
+        .icon-indicator-round { width: 14px; height: 14px; border: 3px solid #e17055; border-radius: 50%; background-color: transparent; }
+        .icon-indicator-flat { width: 16px; height: 8px; border-top: 3px solid #00b894; border-bottom: 3px solid #00b894; background-color: transparent; }
 
-        /* 高速振動用のアニメーションCSS（声帯用） */
         @keyframes vibrate-subtle {
             0% { transform: translate(0, 0); }
             20% { transform: translate(-1px, 1px); }
@@ -101,8 +106,8 @@
         }
         .vibrating-subtle { animation: vibrate-subtle 0.05s infinite; }
         
-        /* 1秒かけて滑らかに器官を移動させる */
-        rect, circle, ellipse, g {
+        /* opacityや各種属性の変更を1秒かけて滑らかに遷移させる */
+        rect, circle, ellipse, g, path, line {
             transition: all 1.0s ease-in-out;
         }
         
@@ -110,13 +115,18 @@
 </head>
 <body>
 
-    <h1>IPA 母音調音シミュレーター</h1>
-    <p>ボタンを押すと、**舌の最高点の位置（高低・前後）**と、**唇の丸み（円唇・非円唇）**が変化します。</p>
-    <p>【1秒かけて移動 ➔ 1.5秒時点で声帯振動開始 ➔ 5秒時点で自動リセット】の6秒タイムラインです。</p>
+    <h1>母音調音シミュレーター</h1>
+    <p>ボタンを押すと舌が各母音の調音位置に動き、図内左下に唇の形が表示されます。</p>
     
     <svg width="400" height="300">
-        <path hard-palate d="M 80,60 L 230,60 L 330,100 L 330,120 L 230,80 L 80,80 Z" fill="#b2bec3" />
-        <text x="180" y="45" fill="#636e72" font-size="12" text-anchor="middle">上あご（顎骨ライン）</text>
+        <path id="hard-palate-fixed" d="M 80,60 L 230,60 L 230,40 L 80,40 Z" fill="#b2bec3" />
+        <path id="pharyngeal-wall-fixed" d="M 330,100 L 330,200 L 350,200 L 350,100 Z" fill="#b2bec3" />
+        
+        <text x="150" y="30" fill="#636e72" font-size="12" text-anchor="middle">硬口蓋</text>
+        <text x="375" y="150" fill="#636e72" font-size="12" text-anchor="middle" style="writing-mode: vertical-rl;">咽頭壁</text>
+        <text x="290" y="30" fill="#7f8c8d" font-size="11" text-anchor="middle">鼻腔</text>
+
+        <path id="velum" d="M 230,60 L 275,100 L 285,90 L 230,40 Z" fill="#7f8c8d" />
 
         <rect id="upper-lip" x="50" y="85" width="25" height="20" fill="#ff7675" />
         <rect id="lower-lip" x="50" y="135" width="25" height="20" fill="#ff7675" />
@@ -130,92 +140,122 @@
         </g>
 
         <g id="vocal-cords-container">
-            <line vocal-cord-top x1="320" y1="210" x2="350" y2="210" stroke="#d63031" stroke-width="4" stroke-linecap="round" />
-            <line vocal-cord-bottom x1="320" y1="230" x2="350" y2="230" stroke="#d63031" stroke-width="4" stroke-linecap="round" />
+            <line vocal-cord-top x1="320" y1="220" x2="350" y2="220" stroke="#d63031" stroke-width="4" stroke-linecap="round" />
+            <line vocal-cord-bottom x1="320" y1="240" x2="350" y2="240" stroke="#d63031" stroke-width="4" stroke-linecap="round" />
         </g>
-        <text x="335" y="255" fill="#636e72" font-size="12" text-anchor="middle">声門</text>
+        <text x="335" y="265" fill="#636e72" font-size="12" text-anchor="middle">声門</text>
+
+        <g id="lip-indicator-panel" transform="translate(25, 235)">
+            <rect x="0" y="0" width="100" height="45" rx="6" fill="#f4f6f9" stroke="#dfe6e9" stroke-width="1" />
+            <text x="50" y="16" fill="#636e72" font-size="11" text-anchor="middle" font-weight="bold">LIP STATUS</text>
+            
+            <circle id="indicator-round" cx="50" cy="30" r="10" fill="none" stroke="#e17055" stroke-width="4" opacity="0" />
+            
+            <g id="indicator-flat" opacity="0">
+                <line x1="38" y1="27" x2="62" y2="27" stroke="#00b894" stroke-width="4" stroke-linecap="round" />
+                <line x1="38" y1="33" x2="62" y2="33" stroke="#00b894" stroke-width="4" stroke-linecap="round" />
+            </g>
+        </g>
     </svg>
 
     <div class="controls">
-        <button onclick="simulate('i')">[i] 狭前舌非円唇母音 (い)</button>
-        <button onclick="simulate('e')">[e] 半狭前舌非円唇母音 (え)</button>
-        <button onclick="simulate('a')">[a] 広前舌非円唇母音 (あ)</button>
-        <button onclick="simulate('schwa')">[ə] 中央半広母音（シュワ）</button>
+        <button onclick="simulate('i')">[i] 狭前舌非円唇母音</button>
+        <button onclick="simulate('e')">[e] 半狭前舌非円唇母音</button>
+        <button onclick="simulate('a')">[a] 広前舌非円唇母音</button>
+        <button onclick="simulate('schwa')">[ə] 中央半広母音</button>
         <button onclick="simulate('open_o')">[ɔ] 半広後舌円唇母音</button>
-        <button onclick="simulate('o')">[o] 半狭後舌円唇母音 (お)</button>
-        <button onclick="simulate('u')">[u] 狭後舌円唇母音 (う)</button>
+        <button onclick="simulate('o')">[o] 半狭後舌円唇母音</button>
+        <button onclick="simulate('u')">[u] 狭後舌円唇母音</button>
         
-        <button class="reset-btn" onclick="simulate('reset')">強制リセット</button>
+        <button class="reset-btn" onclick="simulate('reset')">リセット</button>
     </div>
 
     <div class="legend-container">
         <div class="legend-title">図記号の説明</div>
         <div class="legend-item">
             <span class="icon icon-rect-gray"></span>
-            <span><strong>グレーの形状：</strong> 上あごの基準ライン（不動部分）</span>
+            <span><strong>ライトグレーの形状：</strong> 硬口蓋と咽頭壁</span>
+        </div>
+        <div class="legend-item">
+            <span class="icon icon-velum"></span>
+            <span><strong>ダークグレーの形状：</strong>口蓋帆</span>
         </div>
         <div class="legend-item">
             <span class="icon icon-square-pink"></span>
-            <span><strong>2つの正方形（ピンク）：</strong> 上唇と下唇（[u][o]など円唇の時は前へ突き出て閉じます）</span>
+            <span><strong>2つの正方形（ピンク）：</strong> 上唇と下唇（円唇時に前へ突き出ます）</span>
         </div>
         <div class="legend-item">
             <span class="icon icon-ellipse-pink"></span>
-            <span><strong>薄いピンクの楕円：</strong> 舌全体（母音の音色変化に応じてダイナミックに形と位置を変えます）</span>
+            <span><strong>薄いピンクの楕円：</strong> 舌全体</span>
         </div>
         <div class="legend-item">
             <span class="icon icon-circle-magenta"></span>
-            <span><strong>円（マゼンタ）：</strong> 舌の最高点（母音四辺形上のプロット。常に楕円の頂点と連動します）</span>
+            <span><strong>円（マゼンタ）：</strong> 舌の最高点</span>
         </div>
         <div class="legend-item">
             <span class="icon icon-vocal-cords"></span>
-            <span><strong>2本の赤線：</strong> 声帯（すべての母音で、開始1.5秒後から自動で微細に振動します）</span>
+            <span><strong>2本の赤線：</strong> 声帯</span>
+        </div>
+        <div class="legend-item">
+            <span class="icon icon-indicator-round"></span>
+            <span><strong>左下インジケーター（円）：</strong> 円唇母音を示します</span>
+        </div>
+        <div class="legend-item">
+            <span class="icon icon-indicator-flat"></span>
+            <span><strong>左下インジケーター（平行線）：</strong> 非円唇母音を示します</span>
         </div>
     </div>
 
     <script>
         let activeTimeouts = [];
 
-        // ★ 母音空間（高低・前後）と唇の連動データ
+        // 口蓋帆の形状データ
+        const velumPaths = {
+            'raised': "M 230,60 L 328,72 L 328,52 L 230,40 Z", 
+            'lowered': "M 230,60 L 275,100 L 285,90 L 230,40 Z"  
+        };
+
+        // ★ 母音データ（lipShape 属性で円と平行線の出し分けを制御）
         const positions = {
-            // [i]: 高母音・前舌。舌の最高点（円）が左上の極限まで引き上がり、前上がりに強く傾く。唇は横に引く（元の位置）。
             'i': {
-                pointX: 130, pointY: 100, bodyCx: 190, bodyCy: 116, angle: 22,
-                lipX: 50, upperLipY: 88, lowerLipY: 132
+                pointX: 135, pointY: 112, bodyCx: 195, bodyCy: 128, angle: 20,
+                lipX: 50, upperLipY: 88, lowerLipY: 132, velum: 'raised',
+                lipShape: 'flat'
             },
-            // [e]: 中高母音・前舌。[i]と[a]の中間位置。少し下に下がる。
             'e': {
-                pointX: 145, pointY: 130, bodyCx: 205, bodyCy: 146, angle: 15,
-                lipX: 50, upperLipY: 85, lowerLipY: 135
+                pointX: 145, pointY: 135, bodyCx: 205, bodyCy: 150, angle: 14,
+                lipX: 50, upperLipY: 85, lowerLipY: 135, velum: 'raised',
+                lipShape: 'flat'
             },
-            // [a]: 低母音・前舌（〜中舌）。舌全体が底のほうに沈み込み、あごが開く。
             'a': {
                 pointX: 160, pointY: 185, bodyCx: 210, bodyCy: 195, angle: 5,
-                lipX: 50, upperLipY: 78, lowerLipY: 142
+                lipX: 50, upperLipY: 78, lowerLipY: 142, velum: 'raised',
+                lipShape: 'flat'
             },
-            // [schwa] (ə): 中央母音。すべてが完全にリラックスしたニュートラルな中段・中央位置。
             'schwa': {
                 pointX: 210, pointY: 150, bodyCx: 210, bodyCy: 155, angle: 0,
-                lipX: 50, upperLipY: 85, lowerLipY: 135
+                lipX: 50, upperLipY: 85, lowerLipY: 135, velum: 'raised',
+                lipShape: 'flat'
             },
-            // [ɔ]: 中低母音・後舌。舌の盛り上がりが右下（奥）へ。円唇なので唇が前（左・lipX=40）に突き出つつ狭まる。
             'open_o': {
-                pointX: 260, pointY: 160, bodyCx: 210, bodyCy: 176, angle: -15,
-                lipX: 42, upperLipY: 92, lowerLipY: 128
+                pointX: 242, pointY: 165, bodyCx: 205, bodyCy: 170, angle: -6,
+                lipX: 42, upperLipY: 92, lowerLipY: 128, velum: 'raised',
+                lipShape: 'round'
             },
-            // [o]: 中高母音・後舌。舌の盛り上がりがさらに右上へ。より強い円唇。
             'o': {
-                pointX: 270, pointY: 125, bodyCx: 215, bodyCy: 141, angle: -20,
-                lipX: 38, upperLipY: 94, lowerLipY: 126
+                pointX: 245, pointY: 148, bodyCx: 205, bodyCy: 153, angle: -10,
+                lipX: 38, upperLipY: 94, lowerLipY: 126, velum: 'raised',
+                lipShape: 'round'
             },
-            // [u]: 高母音・後舌。舌の最高点が右上の奥深く（軟口蓋側）に極限まで引き上がる（右上がり傾斜）。唇は最も狭く前に突き出る。
             'u': {
-                pointX: 280, pointY: 100, bodyCx: 220, bodyCy: 116, angle: -25,
-                lipX: 35, upperLipY: 96, lowerLipY: 124
+                pointX: 248, pointY: 130, bodyCx: 205, bodyCy: 135, angle: -14,
+                lipX: 35, upperLipY: 96, lowerLipY: 124, velum: 'raised',
+                lipShape: 'round'
             },
-            // 初期状態（リセット）
             'reset': {
                 pointX: 220, pointY: 190, bodyCx: 220, bodyCy: 190, angle: 0,
-                lipX: 50, upperLipY: 85, lowerLipY: 135
+                lipX: 50, upperLipY: 85, lowerLipY: 135, velum: 'lowered',
+                lipShape: 'none'
             }
         };
 
@@ -227,17 +267,17 @@
         function simulate(vowel) {
             clearTimeline();
 
-            // 1. 【0秒】移動開始（振動なし）
+            // 1. 【0秒】移動開始
             applyPosition(vowel, false);
 
             if (vowel === 'reset') return;
 
-            // 2. 【1.5秒】移動が終わった0.5秒後から、声帯の有声振動がスタート
+            // 2. 【1.5秒】声帯振動スタート
             const startVibrationTimeout = setTimeout(() => {
                 applyPosition(vowel, true);
             }, 1500);
 
-            // 3. 【5秒】調音タイムライン終了。中央（リセット）へ自動帰還開始
+            // 3. 【5秒】自動リセット
             const stopAndResetTimeout = setTimeout(() => {
                 applyPosition('reset', false);
             }, 5000);
@@ -253,10 +293,18 @@
             const tonguePointContainer = document.getElementById('tongue-point-container');
             const tonguePoint = document.querySelector('[tongue-point]');
             const vocalCordsContainer = document.getElementById('vocal-cords-container');
+            const velum = document.getElementById('velum');
+            
+            // ★ 図内インジケーターの要素
+            const indicatorRound = document.getElementById('indicator-round');
+            const indicatorFlat = document.getElementById('indicator-flat');
 
             const data = positions[vowelKey];
 
-            // 舌先・舌本体の座標と傾きの連動
+            // 口蓋帆（軟口蓋）のパス変更
+            velum.setAttribute('d', velumPaths[data.velum]);
+
+            // 舌先・舌本体の座標と傾き
             tonguePoint.setAttribute('cx', data.pointX);
             tonguePoint.setAttribute('cy', data.pointY);
             tongueBody.setAttribute('cx', data.bodyCx);
@@ -265,13 +313,26 @@
             tongueBodyContainer.style.transform = `rotate(${data.angle}deg)`;
             tongueBodyContainer.style.transformOrigin = `${data.bodyCx}px ${data.bodyCy}px`;
 
-            // 唇の連動（円唇の突き出し X と、開き具合 Y を同時制御）
+            // 唇の連動
             upperLip.setAttribute('x', data.lipX);
             upperLip.setAttribute('y', data.upperLipY);
             lowerLip.setAttribute('x', data.lipX);
             lowerLip.setAttribute('y', data.lowerLipY);
 
-            // 全ての母音は有声音。指定タイムラインでのみ声帯を震わせる
+            // ★ 唇状態インジケーター（左下）のグラフィカル制御
+            if (data.lipShape === 'round') {
+                indicatorRound.setAttribute('opacity', '1');
+                indicatorFlat.setAttribute('opacity', '0');
+            } else if (data.lipShape === 'flat') {
+                indicatorRound.setAttribute('opacity', '0');
+                indicatorFlat.setAttribute('opacity', '1');
+            } else {
+                // reset（待機中）は両方非表示
+                indicatorRound.setAttribute('opacity', '0');
+                indicatorFlat.setAttribute('opacity', '0');
+            }
+
+            // 声帯の振動
             if (enableVibration && vowelKey !== 'reset') {
                 vocalCordsContainer.classList.add('vibrating-subtle');
             } else {
