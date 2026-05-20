@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>IPA 調音シミュレーター（気流ルート口蓋側修正版）</title>
+    <title>IPA 調音シミュレーター（調音器官フォーカス版）</title>
     <style>
         body { 
             text-align: center; 
@@ -92,26 +92,8 @@
         .icon-circle-magenta { width: 12px; height: 12px; background-color: #e84393; border-radius: 50%; }
         .icon-ellipse-pink { width: 30px; height: 10px; background-color: #ffcccc; border-radius: 50%; border: 1px solid #eeaaaa; }
         .icon-vocal-cords { width: 20px; height: 15px; border-top: 3px dashed #d63031; border-bottom: 3px dashed #d63031; }
-        
-        .icon-airflow-arrow {
-            width: 25px; height: 14px;
-            position: relative;
-        }
-        .icon-airflow-arrow::before {
-            content: '';
-            position: absolute;
-            top: 6px; left: 0; width: 18px; height: 3px;
-            background-color: #00cec9;
-        }
-        .icon-airflow-arrow::after {
-            content: '';
-            position: absolute;
-            top: 2px; right: 2px; width: 0; height: 0;
-            border-top: 5px solid transparent;
-            border-bottom: 5px solid transparent;
-            border-left: 8px solid #00cec9;
-        }
 
+        /* 高速振動用のアニメーションCSS */
         @keyframes vibrate-subtle {
             0% { transform: translate(0, 0); }
             20% { transform: translate(-1px, 1px); }
@@ -129,15 +111,10 @@
             100% { transform: translate(0, 0); }
         }
 
-        /* 気流を走らせるアニメーション */
-        @keyframes flow {
-            to { stroke-dashoffset: 20; }
-        }
-
         .vibrating-subtle { animation: vibrate-subtle 0.05s infinite; }
         .vibrating-dynamic { animation: vibrate-dynamic 0.05s infinite; }
         
-        rect, circle, ellipse, g, path {
+        rect, circle, ellipse, g {
             transition: all 1.0s ease-in-out;
         }
         
@@ -146,19 +123,10 @@
 <body>
 
     <h1>IPA 調音シミュレーター</h1>
-    <p>気流（青い矢印）の軌道を修正し、常に舌の表面（上面）よりも上側（口蓋側）の隙間を通るように適正化しました。</p>
+    <p>ボタンを押すと1秒かけて器官が移動し、**到着の0.5秒後（開始から1.5秒時点）**から調音・振動が始まります。</p>
+    <p>5秒目になると振動が止まり、1秒かけて自動的に元の基本位置へと戻ります。</p>
     
     <svg width="400" height="300">
-        <defs>
-            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="#00cec9" />
-            </marker>
-        </defs>
-
-        <path id="airflow-line" fill="none" stroke="#00cec9" stroke-width="4" stroke-linecap="round" stroke-dasharray="6, 8" opacity="0" style="transition: opacity 0.3s;" />
-
-        <path id="airflow-burst" fill="none" stroke="#00cec9" stroke-width="5" stroke-linecap="round" opacity="0" marker-end="url(#arrowhead)" style="transition: opacity 0.1s;" />
-
         <path hard-palate d="M 115,50 L 250,50 L 250,70 L 115,70 Z" fill="#b2bec3" />
         <path pharyngeal-wall d="M 330,105 L 350,105 L 350,260 L 330,260 Z" fill="#b2bec3" />
         <text x="180" y="43" fill="#636e72" font-size="12" text-anchor="middle">硬口蓋</text>
@@ -212,36 +180,32 @@
 
     <div class="legend-container">
         <div class="legend-title">図記号の説明</div>
-        <div class="legend-item">
-            <span class="icon icon-airflow-arrow"></span>
-            <span><strong>青い矢印（気流）：</strong> 呼気の流れ。常に舌の上面（口蓋側）の隙間をトレースして流れます。</span>
-        </div>
         <div class="legend-item"><span class="icon icon-tooth-white"></span><span><strong>白い正方形：</strong> 上歯（固定パーツ）</span></div>
-        <div class="legend-item"><span class="icon icon-uvula-white"></span><span><strong>白い涙型（口蓋垂）：</strong> 震え音 [ʀ] の時にここが激しく振動します。</span></div>
-        <div class="legend-item"><span class="icon icon-rect-gray"></span><span><strong>グレーの形状：</strong> 硬口蓋と咽頭壁</span></div>
-        <div class="legend-item"><span class="icon icon-velum-purple"></span><span><strong>紫の形状（口蓋帆）：</strong> 鼻腔への弁</span></div>
+        <div class="legend-item"><span class="icon icon-uvula-white"></span><span><strong>白い涙型（口蓋垂）：</strong> 震え音 [ʀ] の時にここが独立して激しく振動します。</span></div>
+        <div class="legend-item"><span class="icon icon-rect-gray"></span><span><strong>グレーの形状：</strong> 硬口蓋と咽頭壁（不動部分）</span></div>
+        <div class="legend-item"><span class="icon icon-velum-purple"></span><span><strong>紫の形状（口蓋帆）：</strong> 鼻腔への弁（鼻音時にだらんと下がります）</span></div>
         <div class="legend-item"><span class="icon icon-square-pink"></span><span><strong>2つの正方形（ピンク）：</strong> 上唇と下唇</span></div>
-        <div class="legend-item"><span class="icon icon-ellipse-pink"></span><span><strong>薄いピンクの楕円：</strong> 舌全体</span></div>
-        <div class="legend-item"><span class="icon icon-circle-magenta"></span><span><strong>円（マゼンタ）：</strong> 舌の最狭点</span></div>
-        <div class="legend-item"><span class="icon icon-vocal-cords"></span><span><strong>2本の赤線：</strong> 声帯</span></div>
+        <div class="legend-item"><span class="icon icon-ellipse-pink"></span><span><strong>薄いピンクの楕円：</strong> 舌全体（調音方向に応じて左上がり・右上がりに傾きます）</span></div>
+        <div class="legend-item"><span class="icon icon-circle-magenta"></span><span><strong>円（マゼンタ）：</strong> 舌の最狭点（歯茎震え音 [r] の時はここだけが激しく振動します）</span></div>
+        <div class="legend-item"><span class="icon icon-vocal-cords"></span><span><strong>2本の赤線：</strong> 声帯（有声音や震え音のときは微細に振動）</span></div>
     </div>
 
     <script>
         let activeTimeouts = [];
 
         const positions = {
-            't':        { pointX: 135, pointY: 82,  bodyCx: 195, bodyCy: 98,  angle: 12,  upperLipY: 75, lowerLipY: 125, cordTopY: 210, cordBottomY: 230, vibrate: false, velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false, airRoute: 'stop' },
-            'r_trill':  { pointX: 135, pointY: 90,  bodyCx: 195, bodyCy: 106, angle: 12,  upperLipY: 75, lowerLipY: 125, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: true,  airRoute: 'oral' },
-            'k':        { pointX: 295, pointY: 102, bodyCx: 240, bodyCy: 122, angle: -15, upperLipY: 75, lowerLipY: 125, cordTopY: 210, cordBottomY: 230, vibrate: false, velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false, airRoute: 'stop' },
-            'gh':       { pointX: 295, pointY: 120, bodyCx: 240, bodyCy: 140, angle: -15, upperLipY: 75, lowerLipY: 125, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false, airRoute: 'oral' },
-            'p_voiced': { pointX: 230, pointY: 180, bodyCx: 230, bodyCy: 180, angle: 0,   upperLipY: 90, lowerLipY: 110, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false, airRoute: 'stop' },
-            'm':        { pointX: 230, pointY: 180, bodyCx: 230, bodyCy: 180, angle: 0,   upperLipY: 90, lowerLipY: 110, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 23, uvulaAngle: 23, uvulaVibrate: false, tonguePointVibrate: false, airRoute: 'nasal' },
-            'ng':       { pointX: 280, pointY: 122, bodyCx: 230, bodyCy: 138, angle: -15, upperLipY: 75, lowerLipY: 125, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 25, uvulaAngle: 25, uvulaVibrate: false, tonguePointVibrate: false, airRoute: 'nasal' },
-            'theta':    { pointX: 110, pointY: 107, bodyCx: 170, bodyCy: 123, angle: 15,  upperLipY: 75, lowerLipY: 125, cordTopY: 210, cordBottomY: 230, vibrate: false, velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false, airRoute: 'oral' },
-            'eth':      { pointX: 110, pointY: 107, bodyCx: 170, bodyCy: 123, angle: 15,  upperLipY: 75, lowerLipY: 125, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false, airRoute: 'oral' },
-            'q':        { pointX: 312, pointY: 110, bodyCx: 250, bodyCy: 126, angle: -15, upperLipY: 75, lowerLipY: 125, cordTopY: 210, cordBottomY: 230, vibrate: false, velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false, airRoute: 'stop' },
-            'R_trill':  { pointX: 312, pointY: 128, bodyCx: 250, bodyCy: 144, angle: -15, upperLipY: 75, lowerLipY: 125, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: true,  tonguePointVibrate: false, airRoute: 'oral' },
-            'reset':    { pointX: 230, pointY: 180, bodyCx: 230, bodyCy: 180, angle: 0,   upperLipY: 75, lowerLipY: 125, cordTopY: 210, cordBottomY: 230, vibrate: false, velumAngle: 23, uvulaAngle: 23, uvulaVibrate: false, tonguePointVibrate: false, airRoute: 'none' }
+            't':        { pointX: 135, pointY: 82,  bodyCx: 195, bodyCy: 98,  angle: 12,  upperLipY: 75, lowerLipY: 125, cordTopY: 210, cordBottomY: 230, vibrate: false, velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false },
+            'r_trill':  { pointX: 135, pointY: 90,  bodyCx: 195, bodyCy: 106, angle: 12,  upperLipY: 75, lowerLipY: 125, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: true  },
+            'k':        { pointX: 295, pointY: 102, bodyCx: 240, bodyCy: 122, angle: -15, upperLipY: 75, lowerLipY: 125, cordTopY: 210, cordBottomY: 230, vibrate: false, velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false },
+            'gh':       { pointX: 295, pointY: 120, bodyCx: 240, bodyCy: 140, angle: -15, upperLipY: 75, lowerLipY: 125, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false },
+            'p_voiced': { pointX: 230, pointY: 180, bodyCx: 230, bodyCy: 180, angle: 0,   upperLipY: 90, lowerLipY: 110, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false },
+            'm':        { pointX: 230, pointY: 180, bodyCx: 230, bodyCy: 180, angle: 0,   upperLipY: 90, lowerLipY: 110, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 23, uvulaAngle: 23, uvulaVibrate: false, tonguePointVibrate: false },
+            'ng':       { pointX: 280, pointY: 122, bodyCx: 230, bodyCy: 138, angle: -15, upperLipY: 75, lowerLipY: 125, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 25, uvulaAngle: 25, uvulaVibrate: false, tonguePointVibrate: false },
+            'theta':    { pointX: 110, pointY: 107, bodyCx: 170, bodyCy: 123, angle: 15,  upperLipY: 75, lowerLipY: 125, cordTopY: 210, cordBottomY: 230, vibrate: false, velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false },
+            'eth':      { pointX: 110, pointY: 107, bodyCx: 170, bodyCy: 123, angle: 15,  upperLipY: 75, lowerLipY: 125, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false },
+            'q':        { pointX: 312, pointY: 110, bodyCx: 250, bodyCy: 126, angle: -15, upperLipY: 75, lowerLipY: 125, cordTopY: 210, cordBottomY: 230, vibrate: false, velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: false, tonguePointVibrate: false },
+            'R_trill':  { pointX: 312, pointY: 128, bodyCx: 250, bodyCy: 144, angle: -15, upperLipY: 75, lowerLipY: 125, cordTopY: 220, cordBottomY: 220, vibrate: true,  velumAngle: 0,  uvulaAngle: 0,  uvulaVibrate: true,  tonguePointVibrate: false },
+            'reset':    { pointX: 230, pointY: 180, bodyCx: 230, bodyCy: 180, angle: 0,   upperLipY: 75, lowerLipY: 125, cordTopY: 210, cordBottomY: 230, vibrate: false, velumAngle: 23, uvulaAngle: 23, uvulaVibrate: false, tonguePointVibrate: false }
         };
 
         function clearTimeline() {
@@ -252,31 +216,25 @@
         function simulate(sound) {
             clearTimeline();
 
-            // 1. 【0秒】器官の移動を開始
-            applyPosition(sound, false, false, false);
+            // 1. 【0秒】位置の移動を開始（振動なし）
+            applyPosition(sound, false);
 
             if (sound === 'reset') return;
 
-            // 2. 【1.5秒】到着の0.5秒後。振動と気流アニメを同時にON
+            // 2. 【1.5秒】到着の0.5秒後。声帯や対象器官の振動をON
             const startVibrationTimeout = setTimeout(() => {
-                applyPosition(sound, true, true, false);
+                applyPosition(sound, true);
             }, 1500);
 
-            // 3. 【5秒】調音終了・開放の瞬間。帰還させ、閉鎖音なら「実線バースト矢印」をON
+            // 3. 【5秒】調音終了。振動を止め、初期位置へ帰還
             const stopAndResetTimeout = setTimeout(() => {
-                const isStopSound = (positions[sound].airRoute === 'stop');
-                applyPosition('reset', false, false, isStopSound ? sound : false);
+                applyPosition('reset', false);
             }, 5000);
 
-            // 4. 【5.8秒】バースト矢印を消去
-            const clearBurstTimeout = setTimeout(() => {
-                applyPosition('reset', false, false, false);
-            }, 5800);
-
-            activeTimeouts.push(startVibrationTimeout, stopAndResetTimeout, clearBurstTimeout);
+            activeTimeouts.push(startVibrationTimeout, stopAndResetTimeout);
         }
 
-        function applyPosition(soundKey, enableVibration, enableAirflow, burstSoundOrigin) {
+        function applyPosition(soundKey, enableVibration) {
             const velumContainer = document.querySelector('[velum-container]');
             const upperLip = document.querySelector('[upper-lip]');
             const lowerLip = document.querySelector('[lower-lip]');
@@ -286,25 +244,30 @@
             const tonguePoint = document.querySelector('[tongue-point]');
             const vocalCordsContainer = document.getElementById('vocal-cords-container');
             const uvulaContainer = document.getElementById('uvula-container');
-            
-            const airLine = document.getElementById('airflow-line');
-            const airBurst = document.getElementById('airflow-burst');
 
             const data = positions[soundKey];
 
-            // 座標情報の更新
+            // 座標・角度の更新
             tonguePoint.setAttribute('cx', data.pointX);
             tonguePoint.setAttribute('cy', data.pointY);
             tongueBody.setAttribute('cx', data.bodyCx);
             tongueBody.setAttribute('cy', data.bodyCy);
+            
             tongueBodyContainer.style.transform = `rotate(${data.angle}deg)`;
             tongueBodyContainer.style.transformOrigin = `${data.bodyCx}px ${data.bodyCy}px`;
+
             upperLip.setAttribute('y', data.upperLipY);
             lowerLip.setAttribute('y', data.lowerLipY);
+
+            vocalCordTop.setAttribute('y1', data.cordTopY);
+            vocalCordTop.setAttribute('y2', data.cordTopY);
+            vocalCordBottom.setAttribute('y1', data.cordBottomY);
+            vocalCordBottom.setAttribute('y2', data.cordBottomY);
+
             velumContainer.style.transform = `rotate(${data.velumAngle}deg)`;
             uvulaContainer.style.transform = `rotate(${data.uvulaAngle}deg)`;
 
-            // 振動の制御
+            // 振動クラスの着脱制御
             if (enableVibration) {
                 if (data.vibrate) vocalCordsContainer.classList.add('vibrating-subtle');
                 if (data.uvulaVibrate) uvulaContainer.classList.add('vibrating-dynamic');
@@ -313,63 +276,6 @@
                 vocalCordsContainer.classList.remove('vibrating-subtle');
                 uvulaContainer.classList.remove('vibrating-dynamic');
                 tonguePointContainer.classList.remove('vibrating-dynamic');
-            }
-
-            // --- ★【修正】通常気流（点線）を舌の上面（口蓋側）に沿わせるベジエ制御 ---
-            airLine.style.opacity = "0";
-            airLine.style.animation = "none";
-            airLine.removeAttribute('marker-end');
-
-            if (enableAirflow && soundKey !== 'reset') {
-                let pathD = "";
-                const startX = 335, startY = 220; // 声門位置
-                
-                // ★ 舌の最狭点（マゼンタの円：半径12）のフチよりも、さらに上側の口蓋空間（y - 16〜22）を完全に通過させる
-                const pX = data.pointX;
-                const pY = data.pointY - 18; 
-
-                if (data.airRoute === 'oral') {
-                    // 声門 ➔ 咽頭腔を上がり、舌全体のピンクの楕円を上から回り込むように制御点（Cの第1制御点）を設定 ➔ 狭め(pX, pY) ➔ 唇の上側
-                    pathD = `M ${startX},${startY} C 330,170 300,${pY + 15} ${pX},${pY} C ${pX - 40},${pY - 5} 100,105 60,105`;
-                    airLine.setAttribute('marker-end', 'url(#arrowhead)');
-                    airLine.style.opacity = "0.85";
-                    airLine.style.animation = "flow 0.6s linear infinite";
-                } 
-                else if (data.airRoute === 'nasal') {
-                    // 鼻腔ルート（舌の上には行かず、下がった口蓋帆の裏側を通る）
-                    pathD = `M ${startX},${startY} C 335,180 290,130 240,95 C 210,40 120,40 50,40`;
-                    airLine.setAttribute('marker-end', 'url(#arrowhead)');
-                    airLine.style.opacity = "0.85";
-                    airLine.style.animation = "flow 0.6s linear infinite";
-                } 
-                else if (data.airRoute === 'stop') {
-                    // 閉鎖持続中：舌の上面と口蓋が接する直前（pX, pY + 20）で衝突して溜まる
-                    pathD = `M ${startX},${startY} C 330,170 300,${pY + 35} ${pX},${pY + 15}`;
-                    airLine.style.opacity = "0.4";
-                }
-                airLine.setAttribute('d', pathD);
-            }
-
-            // --- ★【修正】破裂開放バースト（実線矢印）も口蓋側（上側）のルートを通過させる ---
-            airBurst.style.opacity = "0";
-            if (burstSoundOrigin) {
-                let burstD = "";
-                const origX = positions[burstSoundOrigin].pointX;
-                const origY = positions[burstSoundOrigin].pointY - 18; // 上側のフチから射出
-
-                if (burstSoundOrigin === 'p_voiced' || burstSoundOrigin === 'm') {
-                    // 唇の破裂：唇の隙間のやや上側から前方へ直線射出
-                    burstD = "M 75,105 L 15,105";
-                } else if (burstSoundOrigin === 't') {
-                    // 歯茎の破裂：歯茎(135, 64)から上歯の裏をかすめて外へ
-                    burstD = `M ${origX},${origY} C 110,95 60,105 15,105`;
-                } else {
-                    // 軟口蓋・口蓋垂の破裂：のど奥の上側隙間から、舌を上から飛び越えて外へ
-                    burstD = `M ${origX},${origY} C ${origX - 60},90 100,105 15,105`;
-                }
-
-                airBurst.setAttribute('d', burstD);
-                airBurst.style.opacity = "0.9";
             }
         }
     </script>
